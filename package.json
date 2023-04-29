@@ -25,7 +25,11 @@
     "dev": "tsc && nodemon ./dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FaizanZaheerGit/ExpressTsBoilerplate"
+  },
+  "keywords": ["express", "typescript", "ts", "boilerplate", "express-ts", "node", "mongoose", "typegoose"],
   "author": "",
   "license": "ISC",
   "description": "",
