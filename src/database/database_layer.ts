@@ -28,7 +28,7 @@ let database_layer = {
             read_filter[constants.STATUS] = { id: 1, name: "active" }
         }
         if ( Object.keys(pageOptions).length != 0 ) {
-            return await collection.find(read_filter).skip( ( (pageOptions.page - 1) * pageOptions.limit) ).limit(pageOptions.limit).sort({ created_at: -1 })
+            return await collection.find(read_filter).skip( (pageOptions.page - 1) * pageOptions.limit ).limit(pageOptions.limit).sort({ created_at: -1 })
         }
         else {
             return await collection.find(read_filter).sort({ created_at: -1 });
