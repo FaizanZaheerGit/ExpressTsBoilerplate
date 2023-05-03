@@ -75,6 +75,8 @@ let userController = {
             pageOptions[constants.PAGE] = parseInt(read_filter[constants.PAGE], 10);
             pageOptions[constants.LIMIT] = parseInt(read_filter[constants.LIMIT], 10);
         }
+        delete read_filter.page;
+        delete read_filter.limit;
         let users = await database_layer.db_read_multiple_records(userModel, read_filter, pageOptions);
         users = await userUtils.filter_user_object(users);
         return res.status(responses.CODE_SUCCESS).send(
