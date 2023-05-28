@@ -243,7 +243,7 @@ let userController = {
             await database_layer.db_update_multiple_records(TokenModel, { user: user, purpose: "Reset Password" }, { is_expired: true, expiry_time: commonUtils.get_current_epoch_time() });
             let insert_token_data: {user?: any, purpose?: string, token?: string} = {};
             let token = uuidv4();
-            let url = "https://www.example.com/" + user.uid + "/" + token;
+            let url = "https://www.example.com/" + user._id + "/" + token;
             insert_token_data[constants.USER] = user;
             insert_token_data[constants.PURPOSE] = "Reset Password";
             insert_token_data[constants.TOKEN] = token;
