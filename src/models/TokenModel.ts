@@ -1,5 +1,4 @@
 import { prop, getModelForClass, modelOptions, Ref } from '@typegoose/typegoose';
-import { v4 as uuidv4 } from 'uuid';
 import commonUtils from '../utils/commonUtils';
 import { User } from './UserModel';
 
@@ -10,8 +9,6 @@ import { User } from './UserModel';
 })
 
 class Token {
-    @prop({ type: String, unique: true, required: true, default: uuidv4() })
-    public uid!: string;
 
     @prop({ ref: () => User, required: true })
     public user!: Ref<User>

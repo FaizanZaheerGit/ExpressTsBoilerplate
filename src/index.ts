@@ -27,9 +27,8 @@ const firebase_app = firebase_utils.FIREBASE_APP;
 
 // ROUTES
 app.get("/", (req: Request, res: Response) => {
-    res.status(200).send(responses.get_response_object(responses.CODE_SUCCESS, null, "Server is Up And Running"))
-    logger.info('200: Server is Up and Running')
-    return;
+    logger.info('200: Server is Up and Running');
+    return res.status(200).send(responses.get_response_object(responses.CODE_SUCCESS, null, "Server is Up And Running"));
 });
 
 app.get('/api/static-data', (req: Request, res: Response) => {

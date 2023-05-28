@@ -34,11 +34,10 @@ let userController = {
             ))
         }
         if (insert_data.image == ' ') {
-          insert_data[constants.IMAGE] = ""
+          insert_data[constants.IMAGE] = "";
         }
-        insert_data[constants.EMAIL_ADDRESS] = await insert_data[constants.EMAIL_ADDRESS].trim();
-        insert_data[constants.EMAIL_ADDRESS] = await insert_data[constants.EMAIL_ADDRESS].toLowerCase();
-        let existing_user = await database_layer.db_read_single_record(userModel, {email_address: insert_data[constants.EMAIL_ADDRESS]})
+        insert_data[constants.EMAIL_ADDRESS] = await insert_data[constants.EMAIL_ADDRESS].trim().toLowerCase();
+        let existing_user = await database_layer.db_read_single_record(userModel, {email_address: insert_data[constants.EMAIL_ADDRESS]}, { email_address: 1 });
         if(existing_user) {
             return res.status(responses.CODE_SUCCESS).send(responses.get_response_object(
                 responses.CODE_ALREADY_EXISTS, null, responses.MESSAGE_ALREADY_EXISTS([constants.USER, constants.EMAIL_ADDRESS])
@@ -48,16 +47,14 @@ let userController = {
         insert_data[constants.PASSWORD] = password_array[0];
         insert_data[constants.PASSWORD_SALT] = password_array[1];
         let new_user = await database_layer.db_insert_single_record(userModel, insert_data);
-        var new_user_obj: Object | any = await userUtils.get_user_object(new_user);
+        let new_user_obj: Object | any = await userUtils.get_user_object(new_user);
         return res.status(responses.CODE_CREATED).send(
             responses.get_response_object(responses.CODE_CREATED, {user: new_user_obj}, responses.MESSAGE_CREATED(constants.USER)));
         }
         catch (err) {
             logger.error("ERROR FROM CREATE CONTROLLER: " + err + " POST DATA: " + JSON.stringify(req.body))
             return res.status(200).send(
-                responses.get_response_object(
-                    responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR
-                )
+                responses.get_response_object(responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR)
             )
         }
     },
@@ -71,23 +68,21 @@ let userController = {
         try {
         const read_filter: {email_address?: string, page?: string, limit?: string} = req.query || {};
         let pageOptions: { page?: Number, limit?: Number } = {};
-        if (Object.keys(read_filter).includes(constants.PAGE) && Object.keys(read_filter).includes(constants.LIMIT)) {
+        if (read_filter.page && read_filter.limit) {
             pageOptions[constants.PAGE] = parseInt(read_filter[constants.PAGE], 10);
             pageOptions[constants.LIMIT] = parseInt(read_filter[constants.LIMIT], 10);
+            delete read_filter.page;
+            delete read_filter.limit;
         }
-        delete read_filter.page;
-        delete read_filter.limit;
-        let users = await database_layer.db_read_multiple_records(userModel, read_filter, pageOptions);
+        let users = await database_layer.db_read_multiple_records(userModel, read_filter, {}, pageOptions);
         users = await userUtils.filter_user_object(users);
         return res.status(responses.CODE_SUCCESS).send(
             responses.get_response_object(responses.CODE_SUCCESS, {users: users}, responses.MESSAGE_SUCCESS));
         }
         catch (err) {
-            logger.error("ERROR FROM READ CONTROLLER: " + err + " QUERY DATA: " + JSON.stringify(req.query))
+            logger.error("ERROR FROM READ CONTROLLER: " + err + " QUERY DATA: " + JSON.stringify(req.query));
             return res.status(200).send(
-                responses.get_response_object(
-                    responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR
-                )
+                responses.get_response_object(responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR)
             )
         }
     },
@@ -98,19 +93,19 @@ let userController = {
             return:
         */
         try {
-        const read_filter: {uid?: string } = { uid: req.body.uid };
-        let user = await database_layer.db_read_single_record(userModel, read_filter);
+        const read_filter: {_id?: string } = { _id: req.body.id };
+        let user = await database_layer.db_read_single_record(userModel, read_filter, { _id: 1 });
         if (!user) {
             let response_obj = responses.get_response_object(responses.CODE_UNPROCESSABLE_ENTITY,
-                null, responses.MESSAGE_NOT_FOUND([constants.USER, constants.UID]))
+                null, responses.MESSAGE_NOT_FOUND([constants.USER, constants.ID]))
             return res.status(responses.CODE_SUCCESS).send(response_obj);
         }
         if (req["current_user"] != user._id) {
           return res.status(responses.CODE_SUCCESS).send( responses.get_response_object(
             responses.CODE_UNAUTHORIZED_ACCESS, null, responses.MESSAGE_UNAUTHORIZED_ACCESS ));
         }
-        const update_filter: {uid?: string, name?: string, status?: Object, image?: string} = req.body || {};
-        delete update_filter.uid;
+        const update_filter: {_id?: string, name?: string, status?: Object, image?: string} = req.body || {};
+        delete update_filter._id;
         if (update_filter.image == null || update_filter.image == '') {
           update_filter[constants.IMAGE] = ' ';
         }
@@ -131,9 +126,7 @@ let userController = {
         catch (err) {
             logger.error("ERROR FROM UPDATE CONTROLLER: " + err + " POST DATA: " + JSON.stringify(req.body))
             return res.status(200).send(
-                responses.get_response_object(
-                    responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR
-                )
+                responses.get_response_object(responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR)
             )
         }
     },
@@ -144,11 +137,11 @@ let userController = {
             return:
         */
         try {
-        const delete_filter: Object | any = { uid: req.params.id };
+        const delete_filter: Object | any = { _id: req.params.id };
         let user = await database_layer.db_read_single_record(userModel, delete_filter);
         if (!user) {
             let response_obj = responses.get_response_object(responses.CODE_UNPROCESSABLE_ENTITY,
-                null, responses.MESSAGE_NOT_FOUND([constants.USER, constants.UID]))
+                null, responses.MESSAGE_NOT_FOUND([constants.USER, constants.ID]))
             return res.status(responses.CODE_SUCCESS).send(response_obj);
         }
         await database_layer.db_delete_record(userModel, delete_filter);
@@ -159,9 +152,7 @@ let userController = {
         catch (err) {
             logger.error("ERROR FROM DELETE CONTROLLER: " + err + " PARAM DATA: " + req.params)
             return res.status(200).send(
-                responses.get_response_object(
-                    responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR
-                )
+                responses.get_response_object(responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR)
             )
         }
     },
@@ -186,7 +177,7 @@ let userController = {
                 responses.CODE_UNPROCESSABLE_ENTITY, null, responses.MESSAGE_INVALID_EMAIL_ADDRESS_OR_PASSWORD)
                 )
         }
-        let is_password = commonUtils.compare_password(token_data[constants.PASSWORD], user[constants.PASSWORD])
+        let is_password = commonUtils.compare_password(token_data[constants.PASSWORD], user[constants.PASSWORD]);
         if (!is_password) {
             return res.status(responses.CODE_SUCCESS).send(responses.get_response_object(
                 responses.CODE_UNPROCESSABLE_ENTITY, null, responses.MESSAGE_INVALID_EMAIL_ADDRESS_OR_PASSWORD)
@@ -196,21 +187,19 @@ let userController = {
         delete token_data[constants.PASSWORD];
         token_data[constants.USER] = user;
         await database_layer.db_update_multiple_records(TokenModel, { user: token_data[constants.USER] }, 
-            { is_expired: true, expiry_time: commonUtils.get_current_epoch_time(), purpose: "session_management" })
+            { is_expired: true, expiry_time: commonUtils.get_current_epoch_time(), purpose: "session_management" });
         const user_data: string = JSON.stringify(user);
         let access_token = await commonUtils.create_jwt_token(user_data);
         token_data[constants.TOKEN] = access_token;
         token_data[constants.PURPOSE] = "session_management";
-        let token = await database_layer.db_insert_single_record(TokenModel, token_data)
+        let token = await database_layer.db_insert_single_record(TokenModel, token_data);
         return res.status(responses.CODE_SUCCESS).send(responses.get_response_object(responses.CODE_SUCCESS,
             {token: token[constants.TOKEN]}, responses.MESSAGE_SUCCESS));
         }
         catch (err) {
             logger.error("ERROR FROM LOGIN CONTROLLER: " + err + " POST DATA: " + JSON.stringify(req.body))
             return res.status(200).send(
-                responses.get_response_object(
-                    responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR
-                )
+                responses.get_response_object(responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR)
             )
         }
     },
@@ -219,16 +208,14 @@ let userController = {
         const auth_header = req.headers['authorization'];
         const token = auth_header && auth_header.split(' ')[1];
         await database_layer.db_update_single_record(TokenModel, { token: token }, 
-            { is_expired: true, expiry_time: commonUtils.get_current_epoch_time() })
+            { is_expired: true, expiry_time: commonUtils.get_current_epoch_time() });
         return res.status(responses.CODE_SUCCESS).send(responses.get_response_object(responses.CODE_SUCCESS, null, 
             responses.MESSAGE_SUCCESS));
         }
         catch (err) {
             logger.error("ERROR FROM LOGOUT CONTROLLER: " + err)
             return res.status(200).send(
-                responses.get_response_object(
-                    responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR
-                )
+                responses.get_response_object(responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR)
             )
         }
     },
@@ -239,13 +226,13 @@ let userController = {
             return:
         */
         try {
-            const read_filter: {email_address?: string} = { email_address: req.body.email_address };
             const { error } = await commonUtils.validate_data(req.body);
             if (error) {
                 return res.status(responses.CODE_SUCCESS).send(responses.get_response_object(
                     responses.CODE_VALIDATION_FAILED, responses.MESSAGE_VALIDATION_FAILED + ": " + error.details[0].context?.key
                 ))
             }
+            const read_filter: {email_address?: string} = { email_address: req.body.email_address };
             let user = await database_layer.db_read_single_record(userModel, read_filter);
             if (!user) {
             return res.status(responses.CODE_SUCCESS).send( responses.get_response_object(
@@ -262,8 +249,8 @@ let userController = {
             insert_token_data[constants.TOKEN] = token;
             await database_layer.db_insert_single_record(TokenModel, insert_token_data);
             let sender_email = process.env.FROM || "";
-            await commonUtils.send_mail_to_user(sender_email, user.email_address, "RESET PASSWORD",
-            "<p>Hi " + user.name + ", Click the link below to reset your password:\n" + url );
+            let email_html: string = `<h1 style='font-family: Arial, Helvetica, sans-serif;text-align: center;text-decoration: underline;'>Pre-CTMS</h1><h2 style='font-family: Arial, Helvetica, sans-serif;text-align: center;'>Reset Password</h2><hr style='width: 75%;background: #00466a;height: 4px;'><br /><p style='font-family: Arial, Helvetica, sans-serif;font-size: 17px;'>Hi ${user[constants.NAME]},<br />We have received a request from your account </p><br /><p style='font-family: Arial, Helvetica, sans-serif;font-size: 17px;'>To Reset Your Password click the button below:</p><a href='${url}' target='blank'><button style='background: #00446a;margin: 0 auto;width: max-content;padding: 8px 20px;color: #fff;border-radius: 18px;font-size: 17px;font-family: Arial, Helvetica, sans-serif;'>Reset Password</button></a><br /><br /><p style='font-family: Arial, Helvetica, sans-serif;font-size: 17px;'>or copy and paste the following URL:<br />${url}</p><br /><p style='font-family: Arial, Helvetica, sans-serif;font-size: 17px;'><b>Regards,<br/>Pre-CTMS Team</b></p>`;
+            await commonUtils.send_mail_to_user(sender_email, user.email_address, "RESET PASSWORD", email_html);
             return res.status(responses.CODE_SUCCESS).send(responses.get_response_object(
             responses.CODE_SUCCESS, null, responses.MESSAGE_MAIL_SENT_SUCCESSFULLY ));
       } catch (e) {
@@ -287,13 +274,13 @@ let userController = {
                 responses.CODE_VALIDATION_FAILED, responses.MESSAGE_VALIDATION_FAILED + ": " + error.details[0].context?.key
             ))
         }
-        let user = await database_layer.db_read_single_record(userModel, { uid: req.body.uid });
+        let user = await database_layer.db_read_single_record(userModel, { _id: req.body.id }, { _id: 1, password: 1 });
         if (!user) {
           return res.status(responses.CODE_SUCCESS).send(responses.get_response_object(
             responses.CODE_INVALID_CALL, null, responses.MESSAGE_NOT_FOUND([constants.USER, constants.UID])
             ));
         }
-        let token = await database_layer.db_read_single_record(TokenModel, { user: user, token: req.body.token, purpose: "Reset Password", is_expired: false });
+        let token = await database_layer.db_read_single_record(TokenModel, { user: user, token: req.body.token, purpose: "Reset Password", is_expired: false }, { _id: 1 });
         if (!token) {
           return res.status(responses.CODE_SUCCESS).send(responses.get_response_object(
             responses.CODE_INVALID_CALL, null, responses.MESSAGE_INVALID_TOKEN ));
@@ -307,8 +294,8 @@ let userController = {
           return res.status(responses.CODE_SUCCESS).send(responses.get_response_object(
             responses.CODE_INVALID_CALL, null, responses.MESSAGE_SAME_PASSWORD ));
         }
-        user = await database_layer.db_update_single_record( userModel, { uid: req.body.uid }, { password: new_password, password_salt: password_salt });
-        token = await database_layer.db_update_multiple_records( TokenModel, { token: req.body.token }, { is_expired: true, expiry_time: commonUtils.get_current_epoch_time() } );
+        user = await database_layer.db_update_single_record( userModel, { _id: req.body.id }, { password: new_password, password_salt: password_salt });
+        token = await database_layer.db_update_single_record( TokenModel, { token: req.body.token }, { is_expired: true, expiry_time: commonUtils.get_current_epoch_time() } );
         return res.status(responses.CODE_SUCCESS).send(responses.get_response_object(
           responses.CODE_SUCCESS, null, responses.MESSAGE_PASSWORD_UPDATED_SUCCESSFULLY ));
       } catch (e) {
@@ -331,10 +318,10 @@ let userController = {
                 responses.CODE_VALIDATION_FAILED, responses.MESSAGE_VALIDATION_FAILED + ": " + error.details[0].context?.key
             ))
         }
-        let user = await database_layer.db_read_single_record(userModel, { uid: req.body.uid });
+        let user = await database_layer.db_read_single_record(userModel, { _id: req.body.id }, { _id: 1, password: 1 });
         if (!user) {
           return res.status(responses.CODE_SUCCESS).send( responses.get_response_object(
-            responses.CODE_INVALID_CALL, null, responses.MESSAGE_NOT_FOUND([constants.USER, constants.UID])
+            responses.CODE_INVALID_CALL, null, responses.MESSAGE_NOT_FOUND([constants.USER, constants.ID])
           ));
         }
         if (req["current_user"] != user._id) {
@@ -354,7 +341,7 @@ let userController = {
           return res.status(responses.CODE_SUCCESS).send( responses.get_response_object(
             responses.CODE_SUCCESS, null, responses.MESSAGE_SAME_PASSWORD ));
         }
-        user = await database_layer.db_update_single_record( userModel, { uid: req.body.uid }, { password: new_password, password_salt: password_salt } );
+        user = await database_layer.db_update_single_record( userModel, { _id: req.body.id }, { password: new_password, password_salt: password_salt } );
         return res.status(responses.CODE_SUCCESS).send( responses.get_response_object(
           responses.CODE_SUCCESS, null, responses.MESSAGE_PASSWORD_UPDATED_SUCCESSFULLY ));
       } catch (e) {
@@ -376,15 +363,11 @@ let userController = {
                 responses.CODE_INVALID_CALL, null, responses.MESSAGE_INVALID_CALL
                 ))
             }
-            const image_url = await firebaseUtils.UPLOAD_IMAGE(req.file)
+            const image_url = await firebaseUtils.UPLOAD_IMAGE(req.file);
             if (!image_url) {
-                return res.status(200).send(responses.get_response_object(
-                responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR
-                ))
+                return res.status(200).send(responses.get_response_object( responses.CODE_GENERAL_ERROR, null, responses.MESSAGE_GENERAL_ERROR ));
             }
-            return res.status(200).send(responses.get_response_object(
-                responses.CODE_SUCCESS, { url: image_url }, responses.MESSAGE_SUCCESS
-            ))
+            return res.status(200).send(responses.get_response_object( responses.CODE_SUCCESS, { url: image_url }, responses.MESSAGE_SUCCESS ));
         }
         catch (e) {
             console.log("Error from Upload Image Controller: " + e);
@@ -406,11 +389,9 @@ let userController = {
                 ))
             }
             let oauth_code: string = req.body[constants.OAUTH_CODE];
-            req.params.channel = await req.params.channel.trim().toLowerCase();
+            req.params.channel = req.params.channel.trim().toLowerCase();
             if (req.params.channel != 'google' && req.params.channel != 'facebook' && req.params.channel != 'apple') {
-            return res.status(responses.CODE_SUCCESS).send(responses.get_response_object(
-                responses.CODE_INVALID_CALL, null, responses.MESSAGE_INVALID_CALL
-            ))
+            return res.status(responses.CODE_SUCCESS).send(responses.get_response_object( responses.CODE_INVALID_CALL, null, responses.MESSAGE_INVALID_CALL ));
             }
 
             else if (req.params.channel == 'google') {
@@ -635,7 +616,7 @@ let userController = {
                 }
                 let token_data: {user?: any, token?: string, purpose?: string} = {}
                 token_data[constants.USER] = user;
-                const updated_tokens = await database_layer.db_update_multiple_records(
+                await database_layer.db_update_multiple_records(
                     TokenModel,
                     { user: token_data[constants.USER], purpose: "session_management" },
                     { is_expired: true, expiry_time: commonUtils.get_current_epoch_time() }

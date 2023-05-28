@@ -109,7 +109,7 @@ let commonUtils = {
                 id: Joi.number(),
                 name: Joi.string()
             }),
-            id: Joi.string(),
+            id: Joi.string().hex().length(24),
             uid: Joi.string()
         });
         return schema.validate(body);

@@ -1,15 +1,15 @@
 let responses = {
-    get_response_object: (response_code: Number, response_data: Object | string | null =null, response_message: String | null =null) => {
+    get_response_object: (statusCode: Number, data: Object | string | null =null, message: String | null =null) => {
         let response: {
-            response_code?: Number,
-            response_data?: Object | string | null,
-            response_message?: String | null
-        } = {response_code: response_code};
-        if (response_data) {
-            response["response_data"] = response_data;``
+            statusCode?: Number,
+            data?: Object | string | null,
+            message?: String | null
+        } = {statusCode: statusCode};
+        if (data) {
+            response["data"] = data;
         }
-        if (response_message) {
-            response["response_message"] = response_message;
+        if (message) {
+            response["message"] = message;
         }
         return response;
     },

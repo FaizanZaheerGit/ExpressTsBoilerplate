@@ -3,7 +3,7 @@ import constants from "./constants";
 let userUtils = {
     get_user_object: async (user: any): Promise<any> => {
         let user_obj: {
-            uid?: string,
+            id?: string,
             name?: string,
             email_address?: string,
             image?: string,
@@ -12,7 +12,7 @@ let userUtils = {
             created_at?: Number,
             updated_at?: Number
         } = {
-            uid: user[constants.UID],
+            id: user[constants.ID],
             name: user[constants.NAME],
             email_address: user[constants.EMAIL_ADDRESS],
             image: user[constants.IMAGE],

@@ -27,7 +27,7 @@ async function authenticateToken(req: Request, res: Response, next: NextFunction
         ))
     }
     let valid_token = await database_layer.db_read_single_record(TokenModel, { "token": token, 
-      "is_expired": false, "expiry_time": 0 })
+      "is_expired": false, "expiry_time": 0 }, { _id: 1 });
     if (!valid_token) {
         return res.status(responses.CODE_SUCCESS).send(responses.get_response_object(
             responses.CODE_UNAUTHORIZED_ACCESS, null, responses.MESSAGE_UNAUTHORIZED_ACCESS

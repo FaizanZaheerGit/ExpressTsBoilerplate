@@ -1,5 +1,4 @@
 import { prop, getModelForClass, modelOptions } from '@typegoose/typegoose';
-import { v4 as uuidv4 } from 'uuid';
 import commonUtils from '../utils/commonUtils';
 import static_data from '../config/static_data';
 
@@ -13,8 +12,6 @@ import static_data from '../config/static_data';
 })
 
 export class User {
-    @prop({ type: String, unique: true, required: true, default: uuidv4() })
-    public uid!: string;
 
     @prop({ type: String, default: "" })
     public name!: string
